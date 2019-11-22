@@ -1,23 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Net.Sockets;
 using System.IO;
 using System.Net;
-
-// including the M2Mqtt Library
-using uPLibrary.Networking.M2Mqtt;
-using uPLibrary.Networking.M2Mqtt.Messages;
+using System.Text;
+using System.Threading;
 
 namespace LocalVideoStreamApp
 {
@@ -28,21 +16,24 @@ namespace LocalVideoStreamApp
 
     public partial class MainWindow : Window
     {
-        MqttClient client;
-        byte[] data;
+        private string filePath;
+        Socket client;
+        IPEndPoint srvEP;
         public MainWindow()
         {
             InitializeComponent();
-        //    client = new MqttClient("broker.streaming.video");
-            client = new MqttClient("broker.mqtt-dashboard.com", 1883, false, null, null, MqttSslProtocols.None);
-            string clientId = Guid.NewGuid().ToString();
-            client.Connect(clientId, "admin", "12345678");
+            initilizeClient();
+        }
+
+        private void initilizeClient()
+        {
+            client = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            label.Content = "Insert Android Device IP";
+            textBox.Text = "";
         }
 
         private void button_Click(object sender, RoutedEventArgs e)
         {
-            client.Disconnect();
-
             base.OnClosed(e);
             App.Current.Shutdown();
         }
@@ -63,29 +54,65 @@ namespace LocalVideoStreamApp
             if (result == true)
             {
                 // Open document
-                string sFileName = dlg.FileName;
+                filePath = dlg.FileName;
                 if (dlg.Multiselect)
                 {
                     string[] arrAllFiles = dlg.FileNames; //used when Multiselect = true 
-                }
-
-                BitmapImage bitmapImage = new BitmapImage(new Uri(sFileName)); ;
-                JpegBitmapEncoder encoder = new JpegBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    encoder.Save(ms);
-                    data = ms.ToArray();
                 }
             }
         }
 
         private void button2_Click(object sender, RoutedEventArgs e)
         {
-            string Topic = "stream/file";
+            if (!string.IsNullOrWhiteSpace(textBox.Text)) {
+                string ipServer = textBox.Text.ToString();
+                srvEP = new IPEndPoint(IPAddress.Parse(ipServer), 12346);
 
-            // publish a message with QoS 2
-            client.Publish(Topic, data, MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, true);
+                BitmapImage bitmapImage = new BitmapImage(new Uri(filePath)); ;
+                JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
+                byte[] data;
+                int blockSize = 40 * 1024;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    encoder.Save(ms);
+                    data = ms.ToArray();
+                }
+                long cntRecive = data.Length / blockSize;
+                long remainder = data.Length % blockSize;
+
+                if (remainder > 0) cntRecive++;
+                string cnt_str = cntRecive.ToString();
+                var RequestData = Encoding.ASCII.GetBytes(cnt_str);
+                client.SendTo(RequestData, srvEP);
+
+                Thread.Sleep(1000);
+
+                for (int i = 0; i < (remainder > 0 ? cntRecive - 1 : cntRecive); i++)
+                {
+                    //ms.Read(buffer, 0, 300);
+                    byte[] buffer = SubArray(data, i * blockSize, blockSize);
+                    client.SendTo(buffer, srvEP);
+                    Thread.Sleep(100);
+                }
+
+                if (remainder > 0)
+                {
+                    int cnt = (int)cntRecive - 1;
+                    //ms.Read(buffer, 0, (int)remainder);
+                    byte[] buffer = SubArray(data, blockSize * cnt, (int)remainder);
+                    client.SendTo(buffer, 0, (int)remainder, SocketFlags.None, srvEP);
+                }
+
+                RequestData = Encoding.ASCII.GetBytes(cnt_str);
+            }
+        }
+
+        private byte[] SubArray(byte[] data, int index, int length)
+        {
+            byte[] result = new byte[length];
+            Array.Copy(data, index, result,0, length);
+            return result;
         }
     }
 }

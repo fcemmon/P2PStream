@@ -34,7 +34,6 @@ public class MQTTPresenter {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
                     // We are connected
-                    view.onSuccess("Connected");
                     subscribeToMqttChannel(client);
                 }
 

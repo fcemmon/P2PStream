@@ -1,94 +1,91 @@
 package com.app.localvideostream;
 
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.app.localvideostream.mqtt.MQTTPresenter;
-import com.app.localvideostream.util.Constants;
 import com.app.localvideostream.util.Utils;
 
-import org.eclipse.paho.android.service.MqttAndroidClient;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import java.io.ByteArrayOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketException;
 
 public class MainActivity extends AppCompatActivity {
 
     ImageView imgLoader;
-
-    MqttAndroidClient client;
-    MQTTPresenter presenter;
+    DatagramSocket udpSocket;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         imgLoader = findViewById(R.id.image);
-        initClient();
-        presenter = new MQTTPresenter(this);
-        presenter.connectToMqtt(client);
+
+        try {
+            udpSocket = new DatagramSocket(12346);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
     }
 
-    void initClient () {
-        final String clientId = MqttClient.generateClientId();
-        client = new MqttAndroidClient(getApplication(), Constants.broker, clientId);
-        client.setCallback(new MqttCallback() {
-            @Override
-            public void connectionLost(Throwable cause) {
-                presenter.connectToMqtt(client);
-            }
-
-            @Override
-            public void messageArrived(String topic, MqttMessage message) throws Exception {
-
-            }
-
-            @Override
-            public void deliveryComplete(IMqttDeliveryToken token) {
-
-            }
-        });
+    @Override
+    protected void onResume() {
+        runListner();
+        super.onResume();
     }
 
-    public void onSuccess(final String msg) {
-        Thread thread = new Thread() {
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
-                    }
-                });
-            }
-        };
-        thread.start();
-    }
-
-    public void receiveImage(final byte[] payload) {
-        Thread thread = new Thread() {
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Bitmap bmp = Utils.convertByteToBitmap(MainActivity.this, payload);
-                        imgLoader.setImageBitmap(Bitmap.createScaledBitmap(bmp, imgLoader.getWidth(),
-                                imgLoader.getHeight(), false));
-                    }
-                });
-            }
-        };
-        thread.start();
+    public void receiveImage(byte[] payload) {
+        Bitmap bmp = Utils.convertByteToBitmap(MainActivity.this, payload);
+        if (bmp != null) {
+            imgLoader.setImageBitmap(Bitmap.createScaledBitmap(bmp, imgLoader.getWidth(),
+                    imgLoader.getHeight(), false));
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        presenter.unSubscribeMqttChannel(client);
-        presenter.disconnectMqtt(client);
+    }
+
+    public void runListner() {
+        new ReadSocket().execute();
+    }
+
+    private class ReadSocket extends AsyncTask<Void, Void, String> {
+        ByteArrayOutputStream baos;
+        @Override
+        protected String doInBackground(Void... voids) {
+            try {
+                udpSocket.setReuseAddress(true);
+                udpSocket.setBroadcast(true);
+                byte[] message = new byte[1024 * 64];
+                DatagramPacket packet = new DatagramPacket(message,message.length);
+                Log.i("UDP client: ", "about to wait to receive");
+                udpSocket.receive(packet);
+                String cnt_str = new String(message, 0, packet.getLength());
+                int cnt = Integer.parseInt(cnt_str);
+                Log.d("udp length: ", cnt_str);
+                baos = new ByteArrayOutputStream();
+                for (int i = 0; i < cnt; i ++){
+                    udpSocket.receive(packet);
+                    baos.write(Utils.subArray(message, 0, packet.getLength()));
+                }
+                Log.d("str", "sdf");
+            }catch (Exception e) {
+                Log.e("IO Exception", "error: ", e);
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            receiveImage(baos.toByteArray());
+            runListner();
+        }
     }
 }
