@@ -62,18 +62,19 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(Void... voids) {
             try {
                 udpSocket.setReuseAddress(true);
-                udpSocket.setBroadcast(true);
                 byte[] message = new byte[1024 * 64];
                 DatagramPacket packet = new DatagramPacket(message,message.length);
                 Log.i("UDP client: ", "about to wait to receive");
                 udpSocket.receive(packet);
                 String cnt_str = new String(message, 0, packet.getLength());
-                int cnt = Integer.parseInt(cnt_str);
-                Log.d("udp length: ", cnt_str);
-                baos = new ByteArrayOutputStream();
-                for (int i = 0; i < cnt; i ++){
-                    udpSocket.receive(packet);
-                    baos.write(Utils.subArray(message, 0, packet.getLength()));
+                if (cnt_str.length() < 5) {
+                    int cnt = Integer.parseInt(cnt_str);
+                    Log.d("udp length: ", cnt_str);
+                    baos = new ByteArrayOutputStream();
+                    for (int i = 0; i < cnt; i++) {
+                        udpSocket.receive(packet);
+                        baos.write(Utils.subArray(message, 0, packet.getLength()));
+                    }
                 }
                 Log.d("str", "sdf");
             }catch (Exception e) {
@@ -84,7 +85,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String result) {
-            receiveImage(baos.toByteArray());
+            if (baos != null && baos.size() > 0) {
+                receiveImage(baos.toByteArray());
+            }
             runListner();
         }
     }
