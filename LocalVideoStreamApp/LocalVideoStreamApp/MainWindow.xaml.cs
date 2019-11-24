@@ -141,7 +141,6 @@ namespace LocalVideoStreamApp
                     false
                 );
             }           
-
         }
 
         private void mqtt_close()

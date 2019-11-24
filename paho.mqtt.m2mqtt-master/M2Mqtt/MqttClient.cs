@@ -1160,17 +1160,14 @@ namespace uPLibrary.Networking.M2Mqtt
         private void sendData()
         {
             MqttMsgContext msgContext = null;
-            int timeout = Timeout.Infinite;
             try
             {
                 while (this.isRunning)
                 {
-                    this.publishHandle.WaitOne(timeout);
                     if (this.isRunning)
                     {
                         lock (this.publishQueue)
                         {
-                            timeout = Int32.MaxValue;
                             int count = this.publishQueue.Count;
                             while (count > 0)
                             {
@@ -1216,7 +1213,6 @@ namespace uPLibrary.Networking.M2Mqtt
                                                 this.Send(msgInflight);
 
                                                 // update timeout : minimum between delay (based on current message sent) or current timeout
-                                                timeout = (this.settings.DelayOnRetry < timeout) ? this.settings.DelayOnRetry : timeout;
 
                                                 // re-enqueue message (I have to re-analyze for receiving PUBACK, SUBACK or UNSUBACK)
                                                 this.inflightQueue.Enqueue(msgContext);
@@ -1237,13 +1233,10 @@ namespace uPLibrary.Networking.M2Mqtt
 
                                                 this.Send(msgInflight);
 
-                                                // update timeout : minimum between delay (based on current message sent) or current timeout
-                                                timeout = (this.settings.DelayOnRetry < timeout) ? this.settings.DelayOnRetry : timeout;
-
                                                 // re-enqueue message (I have to re-analyze for receiving PUBREC)
                                                 this.inflightQueue.Enqueue(msgContext);
                                             }
-                                            break;
+                                        break;
                                     }
                                 }
                             }
