@@ -10,6 +10,8 @@ E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\obj\Debug\
 E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\obj\Debug\LocalVideoStreamApp.g.resources
 E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\obj\Debug\LocalVideoStreamApp.Properties.Resources.resources
 E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\obj\Debug\LocalVideoStreamApp.csproj.GenerateResource.cache
-E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\obj\Debug\LocalVideoStreamApp.csproj.CoreCompileInputs.cache
 E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\obj\Debug\LocalVideoStreamApp.exe
 E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\obj\Debug\LocalVideoStreamApp.pdb
+E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\bin\Debug\M2Mqtt.Net.dll
+E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\bin\Debug\M2Mqtt.Net.pdb
+E:\Work\UDP-FileTransfer\proj\LocalVideoStreamApp\LocalVideoStreamApp\obj\Debug\LocalVideoStreamApp.csproj.CopyComplete

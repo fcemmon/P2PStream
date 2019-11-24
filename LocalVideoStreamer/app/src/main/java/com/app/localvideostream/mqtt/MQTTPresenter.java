@@ -26,15 +26,15 @@ public class MQTTPresenter {
         try {
             MqttConnectOptions options = new MqttConnectOptions();
             options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_DEFAULT);
-            options.setUserName("admin");
-            String password = "12345678";
-            options.setPassword(password.toCharArray());
+            options.setUserName(Constants.username);
+            options.setPassword(Constants.password.toCharArray());
             IMqttToken token = client.connect(options);
             token.setActionCallback(new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
                     // We are connected
                     subscribeToMqttChannel(client);
+                    view.onSuccess("Connected");
                 }
 
                 @Override
@@ -71,7 +71,6 @@ public class MQTTPresenter {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
                     // The subscription could successfully be removed from the client
-                    Toast.makeText(view.getBaseContext(), "Unsubscribe completely", Toast.LENGTH_LONG).show();
                 }
 
                 @Override
@@ -80,7 +79,6 @@ public class MQTTPresenter {
                     // some error occurred, this is very unlikely as even if the client
                     // did not had a subscription to the topic the unsubscribe action
                     // will be successfully
-                    Toast.makeText(view.getBaseContext(), exception.getMessage(), Toast.LENGTH_LONG).show();
                 }
             });
         } catch (MqttException e) {
@@ -95,13 +93,11 @@ public class MQTTPresenter {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
                     // We are connected
-                    Toast.makeText(view.getBaseContext(), "Disconnected MQTT completley", Toast.LENGTH_LONG).show();
                 }
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
                     // Something went wrong e.g. connection timeout or firewall problems
-                    Toast.makeText(view.getBaseContext(), exception.getMessage(), Toast.LENGTH_LONG).show();
                 }
             });
         } catch (MqttException e) {
