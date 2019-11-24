@@ -27,15 +27,19 @@ namespace LocalVideoStreamApp
         {
             InitializeComponent();
             initilizeClient();
+            connectClient();
         }
 
         private void initilizeClient()
         {
+            client = new MqttClient(host, port, false, null, null, MqttSslProtocols.None);
+        }
+
+        private void connectClient()
+        {
             try
             {
                 // create client instance
-                client = new MqttClient(host, port, false, null, null, MqttSslProtocols.None);
-
                 string clientId = Guid.NewGuid().ToString();
                 this.client.Connect(clientId, username, password);
             }
@@ -116,24 +120,27 @@ namespace LocalVideoStreamApp
         {
             if (client == null)
                 return;
-            this.client.Publish(
-                topic,
-                data,
-                MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE,
-                false
-            );
-            this.client.Publish(
-                topic,
-                data1,
-                MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE,
-                false
-            );
-            this.client.Publish(
-                topic,
-                data2,
-                MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE,
-                false
-            );
+            while(true)
+            {
+                this.client.Publish(
+                    topic,
+                    data,
+                    MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE,
+                    false
+                );
+                this.client.Publish(
+                    topic,
+                    data1,
+                    MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE,
+                    false
+                );
+                this.client.Publish(
+                    topic,
+                    data2,
+                    MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE,
+                    false
+                );
+            }           
 
         }
 
@@ -144,6 +151,9 @@ namespace LocalVideoStreamApp
                 this.client.Disconnect();
             }
             this.client = null;
+
+            initilizeClient();
+            connectClient();
         }
     }
 }
