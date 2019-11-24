@@ -857,6 +857,7 @@ namespace uPLibrary.Networking.M2Mqtt
             // message enqueued
             if (enqueue)
             {
+                // Katia's work --- Publish message in a thread
                 Thread thread = new Thread(() =>
                 {
                     sendData(publishMsgCxt);
@@ -1148,6 +1149,8 @@ namespace uPLibrary.Networking.M2Mqtt
         /// <param name="msg">Message to enqueue</param>
         /// <param name="flow">Message flow (publish, acknowledge)</param>
         /// <returns>Message enqueued or not</returns>
+
+        // Katia's work --- Publish message
         private void sendData(MqttMsgContext msgContext) {
             int timeout = Timeout.Infinite;
             try
