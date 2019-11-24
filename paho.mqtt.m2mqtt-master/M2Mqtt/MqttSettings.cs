@@ -70,7 +70,13 @@ namespace uPLibrary.Networking.M2Mqtt
         /// Inflight queue size
         /// </summary>
         public int InflightQueueSize { get; set; }
-        
+
+        /// <summary>
+        /// Inflight queue size
+        /// </summary>
+        public int publishQueueSize { get; set; }
+
+
         /// <summary>
         /// Singleton instance of settings
         /// </summary>
@@ -99,6 +105,7 @@ namespace uPLibrary.Networking.M2Mqtt
             this.DelayOnRetry = MQTT_DELAY_RETRY;
             this.TimeoutOnConnection = MQTT_CONNECT_TIMEOUT;
             this.InflightQueueSize = MQTT_MAX_INFLIGHT_QUEUE_SIZE;
+            this.publishQueueSize = MQTT_MAX_INFLIGHT_QUEUE_SIZE;
         }
     }
 }
