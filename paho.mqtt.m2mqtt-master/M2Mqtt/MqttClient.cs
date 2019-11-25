@@ -131,7 +131,7 @@ namespace uPLibrary.Networking.M2Mqtt
         // event for signaling synchronous receive
         AutoResetEvent syncEndReceiving;
 
-        // event for publishing message
+        // event for publishing message - Katia's work
         AutoResetEvent publishHandle;
 
         // message received
@@ -172,7 +172,7 @@ namespace uPLibrary.Networking.M2Mqtt
 
         // channel to communicate over the network
         private IMqttNetworkChannel channel;
-        // internal queue for publishing message
+        // internal queue for publishing message -- Katia's work
         private Queue publishQueue;
         // session
         private MqttClientSession session;
@@ -446,7 +446,7 @@ namespace uPLibrary.Networking.M2Mqtt
             this.syncEndReceiving = new AutoResetEvent(false);
             this.keepAliveEvent = new AutoResetEvent(false);
 
-            // queue for publishing message
+            // queue for publishing message - Katia's work
             this.publishHandle = new AutoResetEvent(false);
             this.publishQueue = new Queue();
 
@@ -596,7 +596,7 @@ namespace uPLibrary.Networking.M2Mqtt
                 }
 
                 
-                // start thread for handling publish messages queue to broker asynchronously
+                // start thread for handling publish messages queue to broker asynchronously - Katia's work
                 Fx.StartThread(this.sendData);
 
                 this.IsConnected = true;
@@ -651,6 +651,7 @@ namespace uPLibrary.Networking.M2Mqtt
             if (this.receiveEventWaitHandle != null)
                 this.receiveEventWaitHandle.Set();
 
+            // wait end publish thread - Katia's work
             if (this.publishHandle != null)
                 this.publishHandle.Set();
 #if BROKER
@@ -664,6 +665,7 @@ namespace uPLibrary.Networking.M2Mqtt
                 this.keepAliveEventEnd.WaitOne();
 #endif
 
+            // unlock publish queue - Katia's work
             this.publishQueue.Clear();
 
             // close network channel
@@ -1114,11 +1116,12 @@ namespace uPLibrary.Networking.M2Mqtt
             return this.SendReceive(msg.GetBytes((byte)this.ProtocolVersion), timeout);
         }
 
+        /// Katia's work - Send message
         /// <summary>
-        /// Enqueue a message into the inflight queue
+        /// Enqueue a message into the publish queue
         /// </summary>
         /// <param name="msg">Message to enqueue</param>
-        /// <param name="flow">Message flow (publish, acknowledge)</param>
+        /// <param name="flow">Message flow (publish)</param>
         /// <returns>Message enqueued or not</returns>
         private void sendData()
         {
@@ -1133,15 +1136,17 @@ namespace uPLibrary.Networking.M2Mqtt
                         lock (this.publishQueue)
                         {
                             int count = this.publishQueue.Count;
-                            startDate = DateTime.Now;
+                            startDate = DateTime.Now; // save beginning time.
                             while (count > 0)
                             {
+                                // Compare time.
                                 DateTime currentDate = DateTime.Now;
                                 long elapsedTicks = currentDate.Ticks - startDate.Ticks;
                                 TimeSpan elapsedSpan = new TimeSpan(elapsedTicks);
 
                                 if (elapsedSpan.TotalSeconds > 1)
                                 {
+                                    // clear publish queue
                                     publishQueue.Clear();
                                     count = 0;
                                     startDate = DateTime.Now;
@@ -1233,7 +1238,7 @@ namespace uPLibrary.Networking.M2Mqtt
             // enqueue is needed (or not)
             bool enqueue = true;
 
-            // if it is a PUBLISH message with QoS Level 2
+            // if it is a PUBLISH message with QoS Level 2 - Katia's work
             if ((msg.Type == MqttMsgBase.MQTT_MSG_PUBLISH_TYPE) &&
                 (msg.QosLevel == MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE))
             {
@@ -1666,7 +1671,7 @@ namespace uPLibrary.Networking.M2Mqtt
                 // there is a previous session
                 if (this.session != null)
                 {
-                    // unlock process publish queue
+                    // unlock process publish queue - Katia's work
                     this.publishHandle.Set();
                 }
                 else
